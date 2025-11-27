@@ -1,5 +1,40 @@
 #!/bin/bash
 
+###parse command line arguments
+PASSWORD="qaz123.."
+ROSACCOUNT="123"
+ROSPASSWD="123"
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -p|--password)
+            PASSWORD="$2"
+            shift 2
+            ;;
+        -a|--ros-account)
+            ROSACCOUNT="$2"
+            shift 2
+            ;;
+        -r|--ros-password)
+            ROSPASSWD="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: $0 [OPTIONS]"
+            echo "Options:"
+            echo "  -p, --password PASSWORD       Set ROS admin password (default: qaz123..)"
+            echo "  -a, --ros-account ACCOUNT     Set ROS license account (default: 123)"
+            echo "  -r, --ros-password PASSWORD   Set ROS license password (default: 123)"
+            echo "  -h, --help                    Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use -h or --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 ###install needed command
 echo '---install curl wget gzip---'
 if [ -f /etc/os-release ]; then
@@ -92,13 +127,13 @@ echo '---'
 echo '---ROS private config data---'
 
 #ros license account
-ROSACCOUNT="123"
-ROSPASSWD="123"
+#ROSACCOUNT and ROSPASSWD are now set via command line parameters (-a/-r or --ros-account/--ros-password)
+#Default value is "123" if not provided
 #[ -z "$ROSACCOUNT" ] && read -r -p "Input ROS license account:" ROSACCOUNT
 #[ -z "$ROSPASSWD" ] && read -r -p "Input ROS license password:" ROSPASSWD
 
 #access config
-PASSWORD="qaz123.."
+#PASSWORD is now set via command line parameter (-p or --password)
 #[ -z "$PASSWORD" ] && read -r -p "Input ROS admin password:" PASSWORD
 
 SSHPORT="22"
@@ -257,5 +292,10 @@ sync
 echo 'dd starting'
 echo u > /proc/sysrq-trigger
 dd if=/mnt/img/chr.img of=/dev/$DSTDISK bs=1M oflag=sync
-echo 'rebooting'
+echo '---'
+echo 'Installation completed!'
+echo "Username: admin"
+echo "Password: $PASSWORD"
+echo '---'
+echo 'Please reboot your device.'
 echo b > /proc/sysrq-trigger
