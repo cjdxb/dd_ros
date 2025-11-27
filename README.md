@@ -52,6 +52,7 @@ chmod +x dd_ros.sh
 | `--password` | `-p` | ROS 管理员密码 | `qaz123..` |
 | `--ros-account` | `-a` | ROS 许可证账号 | `123` |
 | `--ros-password` | `-r` | ROS 许可证密码 | `123` |
+| `--version` | `-v` | ROS 版本号 | 最新稳定版 |
 | `--help` | `-h` | 显示帮助信息 | - |
 
 #### 使用示例
@@ -63,8 +64,11 @@ chmod +x dd_ros.sh
 # 设置管理员密码
 ./dd_ros.sh -p MySecurePass123
 
+# 指定 ROS 版本
+./dd_ros.sh -v 7.16.2
+
 # 设置所有参数
-./dd_ros.sh -p MyAdminPass -a my_license_account -r my_license_password
+./dd_ros.sh -p MyAdminPass -a my_license_account -r my_license_password -v 7.15.3
 
 # 查看帮助
 ./dd_ros.sh -h
@@ -180,10 +184,11 @@ chmod +x dd_ros.sh
 #### Command Line Arguments
 
 | Option | Short | Description | Default |
-|--------|-------|-------------|---------|
+|--------|-------|-------------|--------|
 | `--password` | `-p` | ROS admin password | `qaz123..` |
 | `--ros-account` | `-a` | ROS license account | `123` |
 | `--ros-password` | `-r` | ROS license password | `123` |
+| `--version` | `-v` | ROS version | latest stable |
 | `--help` | `-h` | Show help message | - |
 
 #### Examples
@@ -195,8 +200,15 @@ chmod +x dd_ros.sh
 # Set admin password
 ./dd_ros.sh -p MySecurePass123
 
+# Specify ROS version
+./dd_ros.sh -v 7.16.2
+
 # Set all parameters
-./dd_ros.sh -p MyAdminPass -a my_license_account -r my_license_password
+./dd_ros.sh -p MyAdminPass -a my_license_account -r my_license_password -v 7.15.3
+
+# Show help
+./dd_ros.sh -h
+```
 
 # Show help
 ./dd_ros.sh -h

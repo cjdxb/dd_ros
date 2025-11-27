@@ -4,6 +4,7 @@
 PASSWORD="qaz123.."
 ROSACCOUNT="123"
 ROSPASSWD="123"
+ROS_VER=""
 while [[ $# -gt 0 ]]; do
     case $1 in
         -p|--password)
@@ -18,12 +19,17 @@ while [[ $# -gt 0 ]]; do
             ROSPASSWD="$2"
             shift 2
             ;;
+        -v|--version)
+            ROS_VER="$2"
+            shift 2
+            ;;
         -h|--help)
             echo "Usage: $0 [OPTIONS]"
             echo "Options:"
             echo "  -p, --password PASSWORD       Set ROS admin password (default: qaz123..)"
             echo "  -a, --ros-account ACCOUNT     Set ROS license account (default: 123)"
             echo "  -r, --ros-password PASSWORD   Set ROS license password (default: 123)"
+            echo "  -v, --version VERSION         Set ROS version (default: latest stable)"
             echo "  -h, --help                    Show this help message"
             exit 0
             ;;
@@ -162,9 +168,12 @@ DNSSVR="1.1.1.1,1.0.0.1"
 
 #######download and extract ROS image zip file
 #ros version
-#ROS_VER="6.49.15"
-ROS_VER=` curl -sL https://download.mikrotik.com/routeros/latest-stable-and-long-term.rss | awk '/\[stable\]/ {print $2}' `
-echo "ROS image version : $ROS_VER"
+if [ -z "$ROS_VER" ]; then
+    ROS_VER=` curl -sL https://download.mikrotik.com/routeros/latest-stable-and-long-term.rss | awk '/\[stable\]/ {print $2}' `
+    echo "ROS image version (latest): $ROS_VER"
+else
+    echo "ROS image version (specified): $ROS_VER"
+fi
 
 #download image zip file
 wget https://download.mikrotik.com/routeros/${ROS_VER}/chr-${ROS_VER}.img.zip -O chr.img.zip
