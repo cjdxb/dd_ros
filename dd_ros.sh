@@ -49,6 +49,7 @@ done
 
 ###install needed command
 echo '---install curl wget gzip---'
+INSTALL_STATUS=0
 if [ -f /etc/os-release ]; then
     distro=`awk -F '=|"' '/^NAME=/{print $3}' /etc/os-release`
     case $distro in
@@ -56,27 +57,29 @@ if [ -f /etc/os-release ]; then
             echo 'yum -y -q install curl wget gzip rsync gdisk dosfstools'
             yum check-update
             yum -y -q install curl wget gzip rsync gdisk dosfstools
+            INSTALL_STATUS=$?
             ;;
         'Ubuntu' | 'Debian GNU/Linux')
             echo 'apt-get -y -q install curl wget gzip rsync gdisk dosfstools'
             #apt-get --allow-releaseinfo-change update
             apt-get update
             apt-get -y -q install curl wget gzip rsync gdisk dosfstools
+            INSTALL_STATUS=$?
             ;;
         'Fedora' | 'Rocky Linux')
             echo 'dnf -y -q install curl wget gzip rsync gdisk dosfstools'
             dnf check-update
             dnf -y -q install curl wget gzip rsync gdisk dosfstools
+            INSTALL_STATUS=$?
             ;;
         *)
-            echo 'Unsupported distribution!'
-            exit 1
+            echo 'Unsupported distribution, skip tools installation and continue.'
+            INSTALL_STATUS=1
             ;;
     esac
-    [ $? -ne 0 ] && echo 'Tools installation failed!' && exit 1
+    [ $INSTALL_STATUS -ne 0 ] && echo 'Tools installation failed or skipped, continue best-effort. Critical commands will stop the script if required tools are missing.'
 else
-    echo '/etc/os-release does not exist!'
-    exit 1
+    echo '/etc/os-release does not exist, skip tools installation and continue.'
 fi
 
 ###check vps basic infomation

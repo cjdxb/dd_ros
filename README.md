@@ -130,7 +130,7 @@ Password: [你设置的密码]
 
 ### 🔧 故障排除
 
-- **安装工具失败** - 检查网络连接和软件源配置
+- **安装工具失败** - 脚本会继续尽力运行；如后续关键命令失败，请检查网络连接和软件源配置
 - **镜像下载失败** - 尝试手动下载镜像或更换网络
 - **本地镜像无法读取** - 检查镜像路径是否正确，并确认当前用户有读取权限
 - **启动失败** - 检查 VPS 是否支持 UEFI 或传统 BIOS 启动
@@ -278,7 +278,7 @@ The script automatically configures:
 
 ### 🔧 Troubleshooting
 
-- **Tool Installation Failed** - Check network connection and repository configuration
+- **Tool Installation Failed** - The script continues best-effort; if a later critical command fails, check network connection and repository configuration
 - **Image Download Failed** - Try manual download or switch network
 - **Local Image Not Readable** - Check the image path and make sure the current user has read permission
 - **Boot Failed** - Check if VPS supports UEFI or legacy BIOS boot
