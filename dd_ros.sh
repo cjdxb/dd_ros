@@ -5,6 +5,7 @@ PASSWORD="qaz123.."
 ROSACCOUNT="123"
 ROSPASSWD="123"
 ROS_VER=""
+IMAGE_SOURCE=""
 while [[ $# -gt 0 ]]; do
     case $1 in
         -p|--password)
@@ -23,6 +24,10 @@ while [[ $# -gt 0 ]]; do
             ROS_VER="$2"
             shift 2
             ;;
+        -i|--image)
+            IMAGE_SOURCE="$2"
+            shift 2
+            ;;
         -h|--help)
             echo "Usage: $0 [OPTIONS]"
             echo "Options:"
@@ -30,6 +35,7 @@ while [[ $# -gt 0 ]]; do
             echo "  -a, --ros-account ACCOUNT     Set ROS license account (default: 123)"
             echo "  -r, --ros-password PASSWORD   Set ROS license password (default: 123)"
             echo "  -v, --version VERSION         Set ROS version (default: latest stable)"
+            echo "  -i, --image SOURCE            Use local image file or image URL instead of default download"
             echo "  -h, --help                    Show this help message"
             exit 0
             ;;
@@ -168,22 +174,110 @@ DNSSVR="1.1.1.1,1.0.0.1"
 
 #######download and extract ROS image zip file
 #ros version
-if [ -z "$ROS_VER" ]; then
-    ROS_VER=` curl -sL https://download.mikrotik.com/routeros/latest-stable-and-long-term.rss | awk '/\[stable\]/ {print $2}' `
+get_latest_ros_version() {
+    local rss_url
+    local rss_content
+    local latest_version
+    local rss_urls=(
+        "https://cdn.mikrotik.com/routeros/latest-stable.rss"
+        "https://download.mikrotik.com/routeros/latest-stable.rss"
+        "https://cdn.mikrotik.com/routeros/latest-stable-and-long-term.rss"
+        "https://download.mikrotik.com/routeros/latest-stable-and-long-term.rss"
+    )
+
+    for rss_url in "${rss_urls[@]}"; do
+        rss_content=`curl -fsSL "$rss_url" 2>/dev/null`
+        [ $? -ne 0 -o -z "$rss_content" ] && continue
+
+        latest_version=`printf '%s\n' "$rss_content" \
+            | grep -Eoi 'RouterOS v?[0-9]+(\.[0-9]+){1,2}([[:alpha:]]+[0-9]+)?[[:space:]]*\[stable\]' \
+            | head -n 1 \
+            | grep -Eo '[0-9]+(\.[0-9]+){1,2}([[:alpha:]]+[0-9]+)?' \
+            | head -n 1`
+
+        [ -n "$latest_version" ] && echo "$latest_version" && return 0
+    done
+
+    return 1
+}
+
+is_url() {
+    echo "$1" | grep -Eq '^[a-zA-Z][a-zA-Z0-9+.-]*://'
+}
+
+detect_ros_version_from_source() {
+    local source_name
+    source_name="${1%%\?*}"
+    source_name="${source_name##*/}"
+    echo "$source_name" \
+        | grep -Eo '[0-9]+(\.[0-9]+){1,2}([[:alpha:]]+[0-9]+)?' \
+        | head -n 1
+}
+
+extract_or_copy_ros_image() {
+    local source_file="$1"
+    local lower_source_file
+
+    if gzip -t "$source_file" >/dev/null 2>&1; then
+        gunzip -c "$source_file" > /mnt/img/chr.img
+        return $?
+    fi
+
+    lower_source_file=`printf '%s' "$source_file" | tr '[:upper:]' '[:lower:]'`
+    case "$lower_source_file" in
+        *.zip|*.gz|*.gzip)
+            return 1
+            ;;
+    esac
+
+    cp "$source_file" /mnt/img/chr.img
+    return $?
+}
+
+if [ -n "$IMAGE_SOURCE" ]; then
+    if [ -z "$ROS_VER" ]; then
+        ROS_VER=`detect_ros_version_from_source "$IMAGE_SOURCE"`
+    fi
+
+    if [ -n "$ROS_VER" ]; then
+        echo "ROS image version (custom image): $ROS_VER"
+    else
+        echo "ROS image version (custom image): unknown, assuming RouterOS 7+ config behavior"
+    fi
+elif [ -z "$ROS_VER" ]; then
+    ROS_VER=`get_latest_ros_version`
+    [ $? -ne 0 -o -z "$ROS_VER" ] && echo 'Failed to get latest stable RouterOS version!' && exit 1
     echo "ROS image version (latest): $ROS_VER"
 else
     echo "ROS image version (specified): $ROS_VER"
 fi
 
-#download image zip file
-wget https://download.mikrotik.com/routeros/${ROS_VER}/chr-${ROS_VER}.img.zip -O chr.img.zip
-[ $? -ne 0 ] && echo 'ROS image zip file download failed!' && exit 1
-
-#extract image zip file to ramfs
+#prepare image file in ramfs
 mkdir -p /mnt/img
 mount -t ramfs rampart /mnt/img
-gunzip -c chr.img.zip > /mnt/img/chr.img
-[ $? -ne 0 ] && echo 'Error on extract image file!' && exit 1
+[ $? -ne 0 ] && echo 'Mount ramfs failed!' && exit 1
+
+if [ -n "$IMAGE_SOURCE" ]; then
+    if is_url "$IMAGE_SOURCE"; then
+        echo "Downloading ROS image from URL: $IMAGE_SOURCE"
+        SOURCE_IMAGE_FILE="${IMAGE_SOURCE%%\?*}"
+        SOURCE_IMAGE_FILE="${SOURCE_IMAGE_FILE##*/}"
+        [ -z "$SOURCE_IMAGE_FILE" ] && SOURCE_IMAGE_FILE="routeros.img"
+        SOURCE_IMAGE_FILE="chr-source-$SOURCE_IMAGE_FILE"
+        wget "$IMAGE_SOURCE" -O "$SOURCE_IMAGE_FILE"
+        [ $? -ne 0 ] && echo 'ROS image URL download failed!' && exit 1
+    else
+        [ ! -r "$IMAGE_SOURCE" ] && echo "Local ROS image file is not readable: $IMAGE_SOURCE" && exit 1
+        SOURCE_IMAGE_FILE="$IMAGE_SOURCE"
+    fi
+else
+    SOURCE_IMAGE_FILE="chr.img.zip"
+    wget https://download.mikrotik.com/routeros/${ROS_VER}/chr-${ROS_VER}.img.zip -O "$SOURCE_IMAGE_FILE"
+    [ $? -ne 0 ] && echo 'ROS image zip file download failed!' && exit 1
+fi
+
+extract_or_copy_ros_image "$SOURCE_IMAGE_FILE"
+[ $? -ne 0 ] && echo 'Error on prepare image file!' && exit 1
 
 ########modify image
 ###losetup loop device

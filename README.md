@@ -17,6 +17,7 @@ DD ROS 是一个自动化部署脚本，用于在 VPS 上安装 MikroTik RouterO
 - 🔧 **智能配置** - 自动检测并配置网络参数（IP、网关、MAC地址等）
 - 🌐 **多发行版支持** - 支持 Ubuntu、Debian、CentOS、Oracle Linux、Amazon Linux、Fedora、Rocky Linux
 - 🔐 **灵活的参数配置** - 通过命令行参数自定义密码和许可证信息
+- 🖼️ **自定义镜像来源** - 支持指定本地 RouterOS 镜像文件或直接使用镜像 URL
 - 📡 **UEFI 支持** - 自动检测并支持 UEFI 启动模式
 - 🌍 **IPv4/IPv6 双栈支持** - 自动配置 IPv4 和 IPv6 网络
 
@@ -53,6 +54,7 @@ chmod +x dd_ros.sh
 | `--ros-account` | `-a` | ROS 许可证账号 | `123` |
 | `--ros-password` | `-r` | ROS 许可证密码 | `123` |
 | `--version` | `-v` | ROS 版本号 | 最新稳定版 |
+| `--image` | `-i` | 本地镜像文件路径或镜像 URL | 自动下载官方镜像 |
 | `--help` | `-h` | 显示帮助信息 | - |
 
 #### 使用示例
@@ -67,8 +69,17 @@ chmod +x dd_ros.sh
 # 指定 ROS 版本
 ./dd_ros.sh -v 7.16.2
 
+# 使用本地镜像文件（支持 .img 或 .img.zip）
+./dd_ros.sh -i /root/chr-7.16.2.img.zip
+
+# 直接使用镜像 URL
+./dd_ros.sh -i https://download.mikrotik.com/routeros/7.16.2/chr-7.16.2.img.zip
+
+# 使用无法从文件名识别版本的自定义镜像时，可同时指定版本
+./dd_ros.sh -i /root/routeros.img -v 7.16.2
+
 # 设置所有参数
-./dd_ros.sh -p MyAdminPass -a my_license_account -r my_license_password -v 7.15.3
+./dd_ros.sh -p MyAdminPass -a my_license_account -r my_license_password -v 7.15.3 -i /root/chr-7.15.3.img.zip
 
 # 查看帮助
 ./dd_ros.sh -h
@@ -90,7 +101,7 @@ Password: [你设置的密码]
 
 1. **环境检测** - 检测 Linux 发行版并安装必要工具
 2. **网络信息采集** - 自动获取网络接口、IP 地址、MAC 地址、网关等信息
-3. **镜像下载** - 下载最新稳定版 RouterOS CHR 镜像
+3. **镜像准备** - 下载官方 RouterOS CHR 镜像，或使用用户指定的本地镜像/URL
 4. **镜像处理** - 提取并配置镜像文件
 5. **UEFI 处理**（如适用）- 转换为 Hybrid MBR 格式
 6. **自动配置** - 生成 autorun.scr 配置脚本
@@ -121,6 +132,7 @@ Password: [你设置的密码]
 
 - **安装工具失败** - 检查网络连接和软件源配置
 - **镜像下载失败** - 尝试手动下载镜像或更换网络
+- **本地镜像无法读取** - 检查镜像路径是否正确，并确认当前用户有读取权限
 - **启动失败** - 检查 VPS 是否支持 UEFI 或传统 BIOS 启动
 - **网络无法访问** - 确认网络参数配置正确，检查防火墙设置
 
@@ -153,6 +165,7 @@ DD ROS is an automated deployment script for installing MikroTik RouterOS CHR (C
 - 🔧 **Smart Configuration** - Auto-detects and configures network parameters (IP, gateway, MAC address, etc.)
 - 🌐 **Multi-Distribution Support** - Supports Ubuntu, Debian, CentOS, Oracle Linux, Amazon Linux, Fedora, Rocky Linux
 - 🔐 **Flexible Parameters** - Customize passwords and license information via command-line arguments
+- 🖼️ **Custom Image Source** - Supports a local RouterOS image file or a direct image URL
 - 📡 **UEFI Support** - Automatically detects and supports UEFI boot mode
 - 🌍 **IPv4/IPv6 Dual Stack** - Automatically configures IPv4 and IPv6 networking
 
@@ -189,6 +202,7 @@ chmod +x dd_ros.sh
 | `--ros-account` | `-a` | ROS license account | `123` |
 | `--ros-password` | `-r` | ROS license password | `123` |
 | `--version` | `-v` | ROS version | latest stable |
+| `--image` | `-i` | Local image file path or image URL | auto-download official image |
 | `--help` | `-h` | Show help message | - |
 
 #### Examples
@@ -203,12 +217,17 @@ chmod +x dd_ros.sh
 # Specify ROS version
 ./dd_ros.sh -v 7.16.2
 
-# Set all parameters
-./dd_ros.sh -p MyAdminPass -a my_license_account -r my_license_password -v 7.15.3
+# Use a local image file (.img and .img.zip are supported)
+./dd_ros.sh -i /root/chr-7.16.2.img.zip
 
-# Show help
-./dd_ros.sh -h
-```
+# Use a direct image URL
+./dd_ros.sh -i https://download.mikrotik.com/routeros/7.16.2/chr-7.16.2.img.zip
+
+# Specify the version when it cannot be detected from a custom image name
+./dd_ros.sh -i /root/routeros.img -v 7.16.2
+
+# Set all parameters
+./dd_ros.sh -p MyAdminPass -a my_license_account -r my_license_password -v 7.15.3 -i /root/chr-7.15.3.img.zip
 
 # Show help
 ./dd_ros.sh -h
@@ -230,7 +249,7 @@ Password: [your_password]
 
 1. **Environment Detection** - Detects Linux distribution and installs necessary tools
 2. **Network Information Collection** - Automatically retrieves network interfaces, IP addresses, MAC addresses, gateways, etc.
-3. **Image Download** - Downloads the latest stable RouterOS CHR image
+3. **Image Preparation** - Downloads the official RouterOS CHR image, or uses a user-provided local image/URL
 4. **Image Processing** - Extracts and configures the image file
 5. **UEFI Processing** (if applicable) - Converts to Hybrid MBR format
 6. **Auto Configuration** - Generates autorun.scr configuration script
@@ -261,6 +280,7 @@ The script automatically configures:
 
 - **Tool Installation Failed** - Check network connection and repository configuration
 - **Image Download Failed** - Try manual download or switch network
+- **Local Image Not Readable** - Check the image path and make sure the current user has read permission
 - **Boot Failed** - Check if VPS supports UEFI or legacy BIOS boot
 - **Network Inaccessible** - Verify network parameters are correct, check firewall settings
 
